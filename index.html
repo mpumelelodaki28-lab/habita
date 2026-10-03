@@ -68,7 +68,7 @@ dialog h3{font-size:24px}dialog form{display:grid;gap:12px;margin-top:14px}
 dialog input,dialog textarea,dialog select{font:inherit;width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 .row{display:flex;gap:8px;justify-content:flex-end}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--dark);color:#F8F7F3;padding:12px 18px;border-radius:12px;display:none;z-index:9}
-.pill.soft{background:var(--gray);color:var(--ink)}.dash{margin-top:50px}.dash h2{font-size:28px;margin-bottom:12px}.dash h3{font-size:18px;margin:18px 0 8px}.rowi{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:14px}.err{color:#B3402F;font-size:14px;min-height:1em}.lnk{background:none;border:0;color:var(--olive);cursor:pointer;font:inherit;text-decoration:underline;padding:0}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}.pic{cursor:pointer}.pdhero{border-radius:14px;overflow:hidden;aspect-ratio:16/9;background:var(--gray)}.pdhero img,.pdhero svg{width:100%;height:100%;object-fit:cover;display:block}.thumbs{display:flex;gap:8px;margin:10px 0;overflow-x:auto}.thumbs button{border:0;padding:0;border-radius:8px;overflow:hidden;width:72px;height:54px;flex:none;cursor:pointer;background:var(--gray)}.thumbs img{width:100%;height:100%;object-fit:cover;display:block}#pdlg{width:min(720px,94vw);max-height:92vh;overflow:auto}.pdx{float:right}.pill.soft{background:var(--gray);color:var(--ink)}.dash{margin-top:50px}.dash h2{font-size:28px;margin-bottom:12px}.dash h3{font-size:18px;margin:18px 0 8px}.rowi{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:14px}.err{color:#B3402F;font-size:14px;min-height:1em}.lnk{background:none;border:0;color:var(--olive);cursor:pointer;font:inherit;text-decoration:underline;padding:0}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:860px){nav{display:none}.sb{grid-template-columns:1fr 1fr}.sb .tog,.sb input{grid-column:1/-1}.sb .btn{grid-column:1/-1}.feat,.tiles{grid-template-columns:1fr 1fr}.hero{min-height:560px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -144,17 +144,18 @@ dialog input,dialog textarea,dialog select{font:inherit;width:100%;padding:10px;
   <div class="row"><button type="button" class="btn alt" id="acancel">Cancel</button><button class="btn" id="asub">Sign in</button></div>
   <div class="m" style="text-align:center"><button type="button" class="lnk" id="aswap">New to Habita? Create an account</button></div>
  </form></dialog>
-<dialog id="ldlg"><h3>List a property</h3><div class="m">It goes live as soon as you publish it.</div>
+<dialog id="ldlg"><h3 id="lh">List a property</h3><div class="m">It goes live as soon as you publish it.</div>
  <form id="lf" style="display:grid;gap:12px;margin-top:14px">
   <input id="lt" placeholder="Title, e.g. Sunny family home" required maxlength="80">
   <input id="ll" placeholder="Location, e.g. Sea Point, Cape Town" required>
   <div class="two"><select id="lm" aria-label="Buy or rent"><option value="Buy">For sale</option><option value="Rent">To rent</option></select><select id="ly" aria-label="Type"><option>House</option><option>Apartment</option><option>Townhouse</option><option>Land</option></select></div>
   <div class="two"><input id="lb" type="number" min="0" placeholder="Bedrooms"><input id="lba" type="number" min="0" placeholder="Bathrooms"></div>
   <div class="two"><input id="ls" type="number" min="0" placeholder="Size (m²)"><input id="lp" type="number" min="1" placeholder="Price (R)" required></div>
-  <label class="m">Photo<input id="lph" type="file" accept="image/*"></label>
+  <textarea id="ld" rows="3" placeholder="Describe the property" maxlength="1500"></textarea><label class="m">Status<select id="lst"><option value="active">Available</option><option value="sold">Sold</option><option value="let">Let</option></select></label><label class="m">Photos (up to 6)<input id="lph" type="file" accept="image/*" multiple></label><div class="m" id="lex"></div>
   <div class="err" id="lerr" role="alert"></div>
   <div class="row"><button type="button" class="btn alt" id="lcancel">Cancel</button><button class="btn" id="lsub">Publish listing</button></div>
  </form></dialog>
+<dialog id="pdlg" aria-label="Property details"><button class="btn alt pdx" id="pclose">Close</button><div id="pbody"></div></dialog>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -170,7 +171,7 @@ let L=[
 {id:8,t:'Starter townhouse',loc:'Centurion, Pretoria',mode:'Rent',type:'Townhouse',beds:2,baths:1,size:110,price:11500,agent:'Thabo Nkosi'}];
 const SB_URL='https://xbuuyyrphewppbgrgtga.supabase.co',SB_KEY='sb_publishable_Dzd6_j5Vq2Z0-w2STmA4gg_CWS4eIgF';
 const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
-async function load(){if(!sb)return;try{const {data,error}=await sb.from('listings').select('*').eq('status','active').order('created_at',{ascending:false});if(error)throw error;L=(data||[]).map(x=>({id:x.id,t:x.title,loc:x.location,mode:x.mode,type:x.type,beds:x.beds,baths:x.baths,size:x.size||0,price:Number(x.price),agent:x.agent_name||'Habita agent',photo:x.photo_url}));render()}catch(e){console.warn('Supabase unavailable, showing sample data',e)}}
+async function load(){if(!sb)return;try{const {data,error}=await sb.from('listings').select('*').in('status',['active','sold','let']).order('created_at',{ascending:false});if(error)throw error;L=(data||[]).map(x=>({id:x.id,t:x.title,loc:x.location,mode:x.mode,type:x.type,beds:x.beds,baths:x.baths,size:x.size||0,price:Number(x.price),agent:x.agent_name||'Habita agent',photo:x.photo_url,photos:(x.photos&&x.photos.length)?x.photos:(x.photo_url?[x.photo_url]:[]),desc:x.description,status:x.status}));L.sort((a,b)=>(a.status&&a.status!=='active')-(b.status&&b.status!=='active'));render();hashOpen()}catch(e){console.warn('Supabase unavailable, showing sample data',e)}}
 const P={Buy:[['','Price range'],[1500000,'Up to R1.5m'],[3000000,'Up to R3m'],[5000000,'Up to R5m'],[10000000,'Up to R10m']],Rent:[['','Price range'],[10000,'Up to R10 000'],[15000,'Up to R15 000'],[25000,'Up to R25 000'],[40000,'Up to R40 000']]};
 const pal={House:['#68755A','#F0E8D6'],Apartment:['#5E6F7A','#E8ECE6'],Townhouse:['#8A6F55','#F2E9DA'],Land:['#7D8B5C','#DCE3C4']};
 let mode='Buy',tfilter='',favs=[],only=false,cur=null;
@@ -186,7 +187,7 @@ function render(){
  const r=L.filter(x=>x.mode===mode&&(!q||x.loc.toLowerCase().includes(q)||x.t.toLowerCase().includes(q))&&(!ty||x.type===ty)&&x.price<=mx&&(!only||favs.includes(x.id)));
  $('title').textContent=only?'Saved properties':mode==='Rent'?'Properties to rent':'Featured properties';
  $('count').textContent=r.length+(r.length===1?' property':' properties');
- $('grid').innerHTML=r.length?r.map(x=>{const f=favs.includes(x.id);return `<article class="card"><div class="pic">${x.photo?`<img src="${esc(x.photo)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`:art(x.type)}<span class="chip">${x.mode==='Rent'?'To rent':'For sale'}</span><button class="fav" data-fav="${x.id}" aria-pressed="${f}" aria-label="${f?'Remove from saved':'Save property'}">${f?'♥':'♡'}</button></div><div class="body"><div class="price">${R(x.price)}${x.mode==='Rent'?' <span class="m">/ month</span>':''}</div><h3 style="font-size:18px">${esc(x.t)}</h3><div class="m">${esc(x.loc)}</div><div class="m">${x.type==='Land'?x.size.toLocaleString('en-ZA').replace(/,/g,' ')+' m² plot':x.beds+' bed · '+x.baths+' bath · '+x.size+' m²'}</div><div class="acts"><button class="btn" data-ask="${x.id}">Contact agent</button><button class="btn alt" data-view="${x.id}">Book viewing</button></div></div></article>`}).join(''):`<div class="empty">${only?'No saved properties yet. Tap the heart on a listing to save it.':'No properties match. Try a higher price or a different type.'}</div>`}
+ $('grid').innerHTML=r.length?r.map(x=>{const f=favs.includes(x.id);return `<article class="card"><div class="pic" data-open="${x.id}">${x.photo?`<img src="${esc(x.photo)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`:art(x.type)}<span class="chip">${x.status==='sold'?'Sold':x.status==='let'?'Let':x.mode==='Rent'?'To rent':'For sale'}</span><button class="fav" data-fav="${x.id}" aria-pressed="${f}" aria-label="${f?'Remove from saved':'Save property'}">${f?'♥':'♡'}</button></div><div class="body"><div class="price">${R(x.price)}${x.mode==='Rent'?' <span class="m">/ month</span>':''}</div><h3 style="font-size:18px"><button class="lnk" style="text-decoration:none;font:inherit;color:inherit;text-align:left" data-open="${x.id}">${esc(x.t)}</button></h3><div class="m">${esc(x.loc)}</div><div class="m">${x.type==='Land'?x.size.toLocaleString('en-ZA').replace(/,/g,' ')+' m² plot':x.beds+' bed · '+x.baths+' bath · '+x.size+' m²'}</div><div class="acts"><button class="btn" ${x.status&&x.status!=='active'?'disabled':''} data-ask="${x.id}">Contact agent</button><button class="btn alt" ${x.status&&x.status!=='active'?'disabled':''} data-view="${x.id}">Book viewing</button></div></div></article>`}).join(''):`<div class="empty">${only?'No saved properties yet. Tap the heart on a listing to save it.':'No properties match. Try a higher price or a different type.'}</div>`}
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',2600)}
 function ask(id,v){cur=L.find(x=>x.id===id);$('dt').textContent=v?'Book a viewing':'Contact agent';$('dsub').textContent=cur.t+' · '+cur.agent;$('kind').value=v?'Request a viewing':'Ask a question';$('dlg').showModal()}
 function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));fillPrice();render()}
@@ -196,7 +197,7 @@ document.querySelectorAll('[data-soon]').forEach(e=>e.onclick=ev=>{ev.preventDef
 $('tiles').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;tfilter=tfilter===b.dataset.t?'':b.dataset.t;$('type').value='';tiles();render();$('list').scrollIntoView()});
 $('grid').addEventListener('click',e=>{const f=e.target.closest('[data-fav]'),a=e.target.closest('[data-ask]'),v=e.target.closest('[data-view]');
  if(f){const i=+f.dataset.fav;favs=favs.includes(i)?favs.filter(x=>x!==i):[...favs,i];try{localStorage.setItem('habita_favs',JSON.stringify(favs))}catch(_){}render()}
- if(a)ask(+a.dataset.ask,false);if(v)ask(+v.dataset.view,true)});
+ if(a)ask(+a.dataset.ask,false);if(v)ask(+v.dataset.view,true);if(!f&&!a&&!v){const o=e.target.closest('[data-open]');if(o)openDetail(+o.dataset.open)}});
 ['q','type','price'].forEach(i=>$(i).addEventListener('input',()=>{tfilter='';tiles();render()}));
 $('go').onclick=()=>{render();$('list').scrollIntoView()};
 $('cancel').onclick=()=>$('dlg').close();
@@ -217,26 +218,52 @@ $('af').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return;$('
   else{const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;$('adlg').close();toast('Signed in.')}
  }catch(err){$('aerr').textContent=err.message||'Something went wrong. Try again.'}
  $('asub').disabled=false});
+let editId=null,existing=[];
 function startListing(e){if(e)e.preventDefault();if(!sb)return toast('Listing is unavailable right now.');
  if(!user){toast('Create an account to list a property.');return openAuth(true)}
  if(!profile||profile.role==='buyer')return toast('Listing needs an owner or agent account.');
- $('lerr').textContent='';$('ldlg').showModal()}
+ editId=null;existing=[];$('lf').reset();$('lh').textContent='List a property';$('lsub').textContent='Publish listing';$('lex').textContent='';$('lerr').textContent='';$('ldlg').showModal()}
+function openEdit(x){editId=x.id;existing=(x.photos&&x.photos.length)?x.photos:(x.photo_url?[x.photo_url]:[]);$('lf').reset();
+ $('lh').textContent='Edit listing';$('lsub').textContent='Save changes';$('lt').value=x.title;$('ll').value=x.location;$('lm').value=x.mode;$('ly').value=x.type;$('lb').value=x.beds;$('lba').value=x.baths;$('ls').value=x.size||'';$('lp').value=x.price;$('ld').value=x.description||'';$('lst').value=x.status||'active';
+ $('lex').innerHTML=existing.length?existing.length+' photo(s) saved. <button type="button" class="lnk" id="clrph">Remove all photos</button>':'';$('lerr').textContent='';$('ldlg').showModal()}
+$('lex').addEventListener('click',e=>{if(e.target.id==='clrph'){existing=[];$('lex').textContent='Photos will be removed when you save.'}});
 $('listBtn').onclick=startListing;$('sellLink').onclick=startListing;
 $('lcancel').onclick=()=>$('ldlg').close();
 $('lf').addEventListener('submit',async e=>{e.preventDefault();$('lerr').textContent='';$('lsub').disabled=true;
- try{let photo=null;const f=$('lph').files[0];
-  if(f){if(f.size>5*1024*1024)throw new Error('Photo must be under 5 MB.');const path=user.id+'/'+Date.now()+'-'+f.name.replace(/[^\w.-]/g,'_');const up=await sb.storage.from('listing-photos').upload(path,f);if(up.error)throw up.error;photo=sb.storage.from('listing-photos').getPublicUrl(path).data.publicUrl}
-  const {error}=await sb.from('listings').insert({title:$('lt').value.trim(),location:$('ll').value.trim(),mode:$('lm').value,type:$('ly').value,beds:+$('lb').value||0,baths:+$('lba').value||0,size:+$('ls').value||null,price:+$('lp').value,agent_name:profile.full_name||'Habita agent',owner_id:user.id,photo_url:photo});
-  if(error)throw error;$('ldlg').close();$('lf').reset();toast('Listing published.');await load();dash()
- }catch(err){$('lerr').textContent=err.message||'Could not publish. Try again.'}
+ try{let photos=existing.slice();const files=[...$('lph').files];
+  if(photos.length+files.length>6)throw new Error('You can have up to 6 photos.');
+  for(const f of files){if(f.size>5*1024*1024)throw new Error('Each photo must be under 5 MB.');const path=user.id+'/'+Date.now()+'-'+f.name.replace(/[^\w.-]/g,'_');const up=await sb.storage.from('listing-photos').upload(path,f);if(up.error)throw up.error;photos.push(sb.storage.from('listing-photos').getPublicUrl(path).data.publicUrl)}
+  const row={title:$('lt').value.trim(),location:$('ll').value.trim(),mode:$('lm').value,type:$('ly').value,beds:+$('lb').value||0,baths:+$('lba').value||0,size:+$('ls').value||null,price:+$('lp').value,description:$('ld').value.trim()||null,status:$('lst').value,photos,photo_url:photos[0]||null};
+  let error;if(editId){({error}=await sb.from('listings').update(row).eq('id',editId))}else{({error}=await sb.from('listings').insert({...row,agent_name:profile.full_name||'Habita agent',owner_id:user.id}))}
+  if(error)throw error;$('ldlg').close();toast(editId?'Changes saved.':'Listing published.');await load();dash()
+ }catch(err){$('lerr').textContent=err.message||'Could not save. Try again.'}
  $('lsub').disabled=false});
+let myList=[];
 async function dash(){const s=$('dash');if(!sb||!user||!profile||profile.role==='buyer'){s.hidden=true;return}
  s.hidden=false;
  const [l,q]=await Promise.all([sb.from('listings').select('*').eq('owner_id',user.id).order('created_at',{ascending:false}),sb.from('enquiries').select('*, listings(title)').order('created_at',{ascending:false})]);
- $('myl').innerHTML=(l.data&&l.data.length)?l.data.map(x=>`<div class="rowi"><span><b>${esc(x.title)}</b> · ${esc(x.location)} · ${R(Number(x.price))}</span><button class="lnk" data-del="${x.id}">Remove</button></div>`).join(''):'<div class="m">No listings yet. Tap "List your property" to add your first.</div>';
+ myList=l.data||[];
+ $('myl').innerHTML=myList.length?myList.map(x=>`<div class="rowi"><span><b>${esc(x.title)}</b> · ${esc(x.location)} · ${R(Number(x.price))}${x.status!=='active'?' · <b>'+(x.status==='sold'?'Sold':'Let')+'</b>':''}</span><span><button class="lnk" data-edit="${x.id}">Edit</button> · <button class="lnk" data-del="${x.id}">Remove</button></span></div>`).join(''):'<div class="m">No listings yet. Tap "List your property" to add your first.</div>';
  $('enq').innerHTML=(q.data&&q.data.length)?q.data.map(x=>`<div class="rowi" style="align-items:flex-start"><span><b>${esc(x.name)}</b> · <a href="mailto:${esc(x.email)}">${esc(x.email)}</a><br>${esc(x.kind)}${x.preferred_date?' on '+esc(x.preferred_date):''} · ${esc(x.listings?x.listings.title:'Listing')}<br>${esc(x.message||'')}</span></div>`).join(''):'<div class="m">No enquiries yet.</div>'}
-$('myl').addEventListener('click',async e=>{const b=e.target.closest('[data-del]');if(!b||!confirm('Remove this listing?'))return;const {error}=await sb.from('listings').delete().eq('id',+b.dataset.del);if(error)return toast('Could not remove listing.');toast('Listing removed.');load();dash()});
+$('myl').addEventListener('click',async e=>{const ed=e.target.closest('[data-edit]');if(ed){const x=myList.find(v=>v.id===+ed.dataset.edit);if(x)openEdit(x);return}
+ const b=e.target.closest('[data-del]');if(!b||!confirm('Remove this listing for good?'))return;const {error}=await sb.from('listings').delete().eq('id',+b.dataset.del);if(error)return toast('Could not remove listing.');toast('Listing removed.');load();dash()});
+// ---- Property detail ----
+function openDetail(id){const x=L.find(v=>v.id===id);if(!x)return;cur=x;const ph=x.photos||[];const off=x.status&&x.status!=='active';
+ $('pbody').innerHTML=`<div class="pdhero" id="pdhero">${ph[0]?`<img src="${esc(ph[0])}" alt="">`:art(x.type)}</div>${ph.length>1?`<div class="thumbs">${ph.map((u,i)=>`<button data-th="${i}" aria-label="Show photo ${i+1}"><img src="${esc(u)}" alt=""></button>`).join('')}</div>`:''}
+ <div class="price" style="margin-top:14px">${R(x.price)}${x.mode==='Rent'?' <span class="m">/ month</span>':''}</div><h2 class="serif" style="font-size:28px">${esc(x.t)}</h2><div class="m">${esc(x.loc)}${off?' · <b>'+(x.status==='sold'?'Sold':'Let')+'</b>':''}</div>
+ <p class="m" style="margin:10px 0">${x.type==='Land'?x.size.toLocaleString('en-ZA').replace(/,/g,' ')+' m² plot':x.beds+' bed · '+x.baths+' bath · '+x.size+' m² · '+x.type}</p>
+ <p style="white-space:pre-wrap">${esc(x.desc||'No description yet.')}</p><p class="m">Listed by ${esc(x.agent)}</p>
+ <div class="acts"><button class="btn" ${off?'disabled':''} data-dask="${x.id}">Contact agent</button><button class="btn alt" ${off?'disabled':''} data-dview="${x.id}">Book viewing</button><button class="btn alt" data-copy="${x.id}">Copy link</button></div>`;
+ if(!$('pdlg').open)$('pdlg').showModal();try{history.replaceState(null,'','#p='+id)}catch(_){}}
+$('pbody').addEventListener('click',e=>{const t=e.target.closest('[data-th]'),a=e.target.closest('[data-dask]'),v=e.target.closest('[data-dview]'),c=e.target.closest('[data-copy]');
+ if(t){$('pdhero').innerHTML=`<img src="${esc(cur.photos[+t.dataset.th])}" alt="">`}
+ if(a){$('pdlg').close();ask(+a.dataset.dask,false)}if(v){$('pdlg').close();ask(+v.dataset.dview,true)}
+ if(c){const u=location.origin+location.pathname+'#p='+c.dataset.copy;(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Link copied.'),()=>toast(u))}});
+$('pclose').onclick=()=>$('pdlg').close();
+$('pdlg').addEventListener('close',()=>{try{history.replaceState(null,'',location.pathname)}catch(_){}});
+function hashOpen(){const m=location.hash.match(/^#p=(\d+)/);if(m&&!$('pdlg').open)openDetail(+m[1])}
 initAuth();
 </script>
 </body>
 </html>
+
